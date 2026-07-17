@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPU Benchmark Showdown | Compare CPUs Side-by-Side</title>
+  <meta name="description" content="Compare modern CPUs side-by-side with real benchmark data. Intel vs AMD vs Apple — see who wins on Cinebench, Geekbench, and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:        #07090f;
+      --bg-surface:     #0d1117;
+      --bg-card:        #111827;
+      --bg-card-hover:  #161e2e;
+      --border:         rgba(255,255,255,0.07);
+      --border-bright:  rgba(255,255,255,0.14);
+      --text-primary:   #f0f4ff;
+      --text-secondary: #8b9ab2;
+      --text-muted:     #4a5568;
+      --accent-blue:    #3b82f6;
+      --accent-violet:  #7c3aed;
+      --accent-cyan:    #06b6d4;
+      --accent-amber:   #f59e0b;
+      --accent-emerald: #10b981;
+      --radius-sm:      8px;
+      --radius-md:      14px;
+      --radius-lg:      20px;
+      --radius-xl:      28px;
+      --transition:     0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 500px;
+      background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(7,9,15,0.6);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo span { color: var(--accent-blue); }
+
+    .header-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--accent-blue);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    main {
+      position: relative;
+      z-index: 5;
+      padding: 40px 40px 100px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .page-title h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      background: linear-gradient(135deg, #f0f4ff 0%, var(--accent-blue) 50%, var(--accent-violet) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+    }
+
+    .page-title p {
+      margin-top: 12px;
+      color: var(--text-secondary);
+      font-size: 1rem;
+    }
+
+    .arena {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .cpu-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .cpu-panel:hover { border-color: var(--border-bright); }
+    .cpu-panel.panel-left  { box-shadow: -6px 0 40px rgba(59,130,246,0.06); }
+    .cpu-panel.panel-right { box-shadow:  6px 0 40px rgba(124,58,237,0.06); }
+
+    .panel-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .panel-left  .panel-label { color: var(--accent-blue); }
+    .panel-right .panel-label { color: var(--accent-violet); }
+
+    .cpu-select-wrapper { position: relative; margin-bottom: 24px; }
+
+    .cpu-select {
+      width: 100%;
+      appearance: none;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-md);
+      padding: 14px 44px 14px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+
+    .panel-left  .cpu-select:focus { border-color: var(--accent-blue);   box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+    .panel-right .cpu-select:focus { border-color: var(--accent-violet); box-shadow: 0 0 0 3px rgba(124,58,237,0.2); }
+
+    .cpu-select-wrapper::after {
+      content: '▾';
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    .cpu-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      animation: fadeSlideIn 0.4s ease;
+    }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .cpu-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .cpu-name { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.3px; line-height: 1.3; }
+
+    .brand-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-left: 8px;
+    }
+
+    .brand-badge.intel  { background: rgba(0,113,197,0.18); color: #4da6ff; border: 1px solid rgba(0,113,197,0.4); }
+    .brand-badge.amd    { background: rgba(237,28,36,0.15);  color: #ff6b6b; border: 1px solid rgba(237,28,36,0.4); }
+    .brand-badge.apple  { background: rgba(160,160,160,0.12); color: #c8c8c8; border: 1px solid rgba(160,160,160,0.3); }
+    .brand-badge.other  { background: rgba(16,185,129,0.12);  color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .spec-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .spec-label { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .spec-value { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+
+    .benchmark-section-title { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+
+    .score-bar-group { display: flex; flex-direction: column; gap: 8px; }
+
+    .score-bar-meta { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .score-bar-label { font-size: 0.78rem; color: var(--text-secondary); font-weight: 500; }
+    .score-bar-value { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 600; }
+
+    .bar-track { height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); width: 0%; }
+
+    .panel-left  .bar-fill { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+    .panel-right .bar-fill { background: linear-gradient(90deg, var(--accent-violet), #a855f7); }
+
+    .vs-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding-top: 80px;
+    }
+
+    .vs-badge {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      box-shadow: 0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(59,130,246,0.2);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 40px rgba(124,58,237,0.5), 0 0 80px rgba(59,130,246,0.2); }
+      50%       { box-shadow: 0 0 60px rgba(124,58,237,0.8), 0 0 120px rgba(59,130,246,0.4); }
+    }
+
+    .compare-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(59,130,246,0.4);
+      background: rgba(59,130,246,0.1);
+      color: var(--accent-blue);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .compare-btn:hover {
+      background: rgba(59,130,246,0.2);
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 20px rgba(59,130,246,0.3);
+      transform: translateY(-2px);
+    }
+
+    .compare-btn.active {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 0 30px rgba(124,58,237,0.5);
+    }
+
+    #comparison-section { margin-top: 40px; display: none; animation: fadeSlideIn 0.5s ease; }
+    #comparison-section.visible { display: block; }
+
+    .comparison-header { text-align: center; margin-bottom: 28px; }
+    .comparison-header h2 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+
+    .comparison-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; }
+
+    .comparison-table thead tr th {
+      padding: 10px 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .comparison-table thead tr th:first-child { text-align: left; }
+    .comparison-table thead tr th:not(:first-child) { text-align: center; }
+
+    .comparison-table tbody tr { background: var(--bg-card); transition: background var(--transition); }
+    .comparison-table tbody tr:hover { background: var(--bg-card-hover); }
+
+    .comparison-table tbody td { padding: 14px 20px; font-size: 0.88rem; }
+
+    .comparison-table tbody td:first-child {
+      color: var(--text-secondary);
+      font-weight: 500;
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
+
+    .comparison-table tbody td:not(:first-child) {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    .comparison-table tbody td:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+
+    td.winner { color: var(--accent-emerald); }
+    td.winner::after { content: ' ✓'; font-size: 0.75rem; opacity: 0.7; }
+    td.loser  { color: var(--text-muted); }
+
+    .section-divider td { padding: 16px 20px 4px !important; color: var(--text-muted); font-size: 0.7rem !important; font-weight: 700 !important; letter-spacing: 1.5px; text-transform: uppercase; }
+
+    #fab-add {
+      position: fixed;
+      bottom: 36px; left: 36px;
+      z-index: 100;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+      border: none;
+      color: #fff;
+      font-size: 1.6rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.5);
+      transition: all var(--transition);
+    }
+
+    #fab-add:hover { transform: scale(1.12) rotate(90deg); box-shadow: 0 12px 40px rgba(124,58,237,0.7); }
+
+    .fab-tooltip {
+      position: fixed;
+      bottom: 44px; left: 100px;
+      z-index: 99;
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity var(--transition);
+    }
+
+    #fab-add:hover ~ .fab-tooltip { opacity: 1; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--transition);
+    }
+
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-xl);
+      padding: 36px;
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(30px) scale(0.96);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .modal-header h3 { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.3px; }
+
+    .modal-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border-bright);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+    }
+
+    .modal-close:hover { background: var(--bg-surface); color: var(--text-primary); }
+
+    .form-section-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent-blue); margin: 20px 0 12px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full-width { grid-column: 1 / -1; }
+
+    .form-group label { font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+
+    .form-group input,
+    .form-group select {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+
+    .form-group select { appearance: none; cursor: pointer; }
+
+    .modal-actions { display: flex; gap: 12px; margin-top: 28px; }
+
+    .btn-cancel {
+      flex: 1; padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-bright);
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: all var(--transition);
+    }
+
+    .btn-cancel:hover { background: var(--bg-surface); color: var(--text-primary); }
+
+    .btn-submit {
+      flex: 2; padding: 12px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: all var(--transition);
+    }
+
+    .btn-submit:hover { box-shadow: 0 8px 24px rgba(124,58,237,0.4); transform: translateY(-1px); }
+
+    .toast {
+      position: fixed;
+      bottom: 36px; right: 36px;
+      z-index: 300;
+      background: var(--bg-card);
+      border: 1px solid var(--accent-emerald);
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      font-size: 0.88rem; font-weight: 600;
+      color: var(--accent-emerald);
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 99px; }
+
+    @media (max-width: 900px) {
+      .arena { grid-template-columns: 1fr; }
+      .vs-column { flex-direction: row; padding-top: 0; }
+      .vs-badge { width: 48px; height: 48px; font-size: 0.9rem; }
+      main { padding: 24px 20px 100px; }
+      header { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">&#9889;</div>
+    CPU<span>Showdown</span>
+  </div>
+  <div class="header-badge">Benchmark Lab</div>
+</header>
+
+<main>
+  <div class="page-title">
+    <h1>CPU Benchmark Showdown</h1>
+    <p>Select two processors and compare their performance head-to-head.</p>
+  </div>
+
+  <div class="arena">
+
+    <!-- LEFT PANEL -->
+    <div class="cpu-panel panel-left" id="panel-left">
+      <div class="panel-label">&#11041; Challenger 1</div>
+      <div class="cpu-select-wrapper">
+        <select class="cpu-select" id="select-cpu1" aria-label="Select CPU 1">
+          <option value="">&#8212; Select a CPU &#8212;</option>
+        </select>
+      </div>
+      <div class="cpu-card" id="card-cpu1"></div>
+    </div>
+
+    <!-- VS CENTER -->
+    <div class="vs-column">
+      <div class="vs-badge">VS</div>
+      <button class="compare-btn" id="compare-btn" aria-label="Toggle comparison chart">
+        &#9878; Compare
+      </button>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="cpu-panel panel-right" id="panel-right">
+      <div class="panel-label">&#11041; Challenger 2</div>
+      <div class="cpu-select-wrapper">
+        <select class="cpu-select" id="select-cpu2" aria-label="Select CPU 2">
+          <option value="">&#8212; Select a CPU &#8212;</option>
+        </select>
+      </div>
+      <div class="cpu-card" id="card-cpu2"></div>
+    </div>
+  </div>
+
+  <!-- Comparison Section -->
+  <div id="comparison-section">
+    <div class="comparison-header">
+      <h2 id="comparison-title">Head-to-Head Breakdown</h2>
+    </div>
+    <table class="comparison-table" id="comparison-table">
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th id="col-cpu1-name">CPU 1</th>
+          <th id="col-cpu2-name">CPU 2</th>
+        </tr>
+      </thead>
+      <tbody id="comparison-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- FAB -->
+<button id="fab-add" aria-label="Add new CPU">+</button>
+<div class="fab-tooltip">Add New CPU</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">+ Add New CPU</h3>
+      <button class="modal-close" id="modal-close" aria-label="Close modal">&#x2715;</button>
+    </div>
+    <form id="add-cpu-form" novalidate>
+
+      <div class="form-section-title">Identity</div>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label for="f-name">CPU Name *</label>
+          <input type="text" id="f-name" placeholder="e.g. Intel Core i9-14900K" required />
+        </div>
+        <div class="form-group">
+          <label for="f-brand">Brand *</label>
+          <select id="f-brand" required>
+            <option value="">Select brand</option>
+            <option value="Intel">Intel</option>
+            <option value="AMD">AMD</option>
+            <option value="Apple">Apple</option>
+            <option value="Qualcomm">Qualcomm</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="f-year">Release Year</label>
+          <input type="number" id="f-year" placeholder="2024" min="2015" max="2030" />
+        </div>
+        <div class="form-group">
+          <label for="f-price">Price (USD)</label>
+          <input type="number" id="f-price" placeholder="499" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f-family">CPU Family / Architecture</label>
+          <input type="text" id="f-family" placeholder="e.g. Zen 4 / Raptor Lake" />
+        </div>
+      </div>
+
+      <div class="form-section-title">Specifications</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="f-cores">Total Cores *</label>
+          <input type="number" id="f-cores" placeholder="8" min="1" required />
+        </div>
+        <div class="form-group">
+          <label for="f-threads">Threads *</label>
+          <input type="number" id="f-threads" placeholder="16" min="1" required />
+        </div>
+        <div class="form-group">
+          <label for="f-base">Base Clock (GHz) *</label>
+          <input type="number" id="f-base" placeholder="3.5" step="0.1" min="0.5" required />
+        </div>
+        <div class="form-group">
+          <label for="f-boost">Boost Clock (GHz) *</label>
+          <input type="number" id="f-boost" placeholder="5.5" step="0.1" min="0.5" required />
+        </div>
+        <div class="form-group">
+          <label for="f-tdp">TDP (Watts)</label>
+          <input type="number" id="f-tdp" placeholder="125" min="1" />
+        </div>
+        <div class="form-group">
+          <label for="f-socket">Socket</label>
+          <input type="text" id="f-socket" placeholder="e.g. AM5 / LGA1700" />
+        </div>
+        <div class="form-group">
+          <label for="f-cache">L3 Cache (MB)</label>
+          <input type="number" id="f-cache" placeholder="32" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f-litho">Lithography</label>
+          <input type="text" id="f-litho" placeholder="e.g. TSMC 5nm" />
+        </div>
+      </div>
+
+      <div class="form-section-title">Benchmark Scores</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="f-cb23s">Cinebench R23 Single</label>
+          <input type="number" id="f-cb23s" placeholder="2000" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f-cb23m">Cinebench R23 Multi</label>
+          <input type="number" id="f-cb23m" placeholder="30000" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f-gb6s">Geekbench 6 Single</label>
+          <input type="number" id="f-gb6s" placeholder="3000" min="0" />
+        </div>
+        <div class="form-group">
+          <label for="f-gb6m">Geekbench 6 Multi</label>
+          <input type="number" id="f-gb6m" placeholder="18000" min="0" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="btn-cancel">Cancel</button>
+        <button type="submit" class="btn-submit" id="btn-submit">&#10003; Add CPU to Library</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+var cpuData = [];
+var comparisonVisible = false;
+var BENCH_MAX = {
+  cinebench_r23_single: 3500,
+  cinebench_r23_multi:  45000,
+  geekbench_6_single:   4000,
+  geekbench_6_multi:    25000
+};
+
+async function loadCPUs() {
+  try {
+    var res  = await fetch('./cpus.json');
+    var json = await res.json();
+    cpuData  = json.cpus || [];
+  } catch(e) {
+    cpuData = [];
+    showToast('Could not load cpus.json — starting with empty library.', '#f59e0b');
+  }
+  var local = JSON.parse(localStorage.getItem('custom_cpus') || '[]');
+  cpuData = cpuData.concat(local);
+  populateSelects();
+  renderCard('cpu1', cpuData[0]);
+  renderCard('cpu2', cpuData[1] || cpuData[0]);
+}
+
+function populateSelects() {
+  ['select-cpu1','select-cpu2'].forEach(function(id, idx) {
+    var sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— Select a CPU —</option>';
+    cpuData.forEach(function(cpu, i) {
+      var opt = document.createElement('option');
+      opt.value = cpu.id;
+      opt.textContent = cpu.name;
+      if (i === idx) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+function renderCard(slot, cpu) {
+  var el = document.getElementById('card-' + slot);
+  if (!cpu) {
+    el.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">Select a CPU above</p>';
+    return;
+  }
+  var s = cpu.specifications || {};
+  var b = cpu.benchmarks || {};
+  var brandClass = (cpu.brand || 'other').toLowerCase();
+  var cb23s = (b.cinebench_r23 && b.cinebench_r23.singleCore) || 0;
+  var cb23m = (b.cinebench_r23 && b.cinebench_r23.multiCore)  || 0;
+  var gb6s  = (b.geekbench_6  && b.geekbench_6.singleCore)   || 0;
+  var gb6m  = (b.geekbench_6  && b.geekbench_6.multiCore)    || 0;
+
+  el.innerHTML =
+    '<div class="cpu-card-header">' +
+      '<div>' +
+        '<div class="cpu-name">' + cpu.name + '</div>' +
+        '<small style="color:var(--text-muted);font-size:0.72rem;">' + (cpu.family || '') + '</small>' +
+      '</div>' +
+      '<span class="brand-badge ' + brandClass + '">' + cpu.brand + '</span>' +
+    '</div>' +
+    '<div class="spec-grid">' +
+      specItem('Cores / Threads', (s.totalCores || '—') + ' / ' + (s.threads || '—')) +
+      specItem('Base / Boost',    (s.baseClockGHz || '—') + ' / ' + (s.boostClockGHz || '—') + ' GHz') +
+      specItem('TDP',             s.tdpWatts ? s.tdpWatts + ' W' : '—') +
+      specItem('Socket',          s.socket || '—') +
+      specItem('L3 Cache',        s.l3CacheMB ? s.l3CacheMB + ' MB' : '—') +
+      specItem('Price',           cpu.price_usd ? '$' + cpu.price_usd : '—') +
+    '</div>' +
+    '<div class="benchmark-section-title">Benchmark Scores</div>' +
+    '<div class="score-bar-group">' +
+      scoreBar('CB R23 Single', cb23s, BENCH_MAX.cinebench_r23_single) +
+      scoreBar('CB R23 Multi',  cb23m, BENCH_MAX.cinebench_r23_multi) +
+      scoreBar('GB6 Single',    gb6s,  BENCH_MAX.geekbench_6_single) +
+      scoreBar('GB6 Multi',     gb6m,  BENCH_MAX.geekbench_6_multi) +
+    '</div>';
+
+  requestAnimationFrame(function() {
+    el.querySelectorAll('.bar-fill').forEach(function(bar) {
+      bar.style.width = bar.dataset.pct + '%';
+    });
+  });
+}
+
+function specItem(label, val) {
+  return '<div class="spec-item"><div class="spec-label">' + label + '</div><div class="spec-value">' + val + '</div></div>';
+}
+
+function scoreBar(label, value, max) {
+  var pct = Math.min(100, Math.round((value / max) * 100));
+  return '<div class="score-bar-item">' +
+    '<div class="score-bar-meta">' +
+      '<span class="score-bar-label">' + label + '</span>' +
+      '<span class="score-bar-value">' + value.toLocaleString() + '</span>' +
+    '</div>' +
+    '<div class="bar-track"><div class="bar-fill" data-pct="' + pct + '" style="width:0%"></div></div>' +
+  '</div>';
+}
+
+function renderComparison() {
+  var id1 = document.getElementById('select-cpu1').value;
+  var id2 = document.getElementById('select-cpu2').value;
+  var c1  = cpuData.find(function(c){ return c.id === id1; });
+  var c2  = cpuData.find(function(c){ return c.id === id2; });
+  if (!c1 || !c2) { showToast('Select two CPUs to compare.', '#f59e0b'); return; }
+
+  document.getElementById('col-cpu1-name').textContent   = c1.name;
+  document.getElementById('col-cpu2-name').textContent   = c2.name;
+  document.getElementById('comparison-title').textContent = c1.name + ' vs ' + c2.name;
+
+  var s1 = c1.specifications || {}; var s2 = c2.specifications || {};
+  var b1 = c1.benchmarks || {};     var b2 = c2.benchmarks || {};
+
+  var rows = [
+    { section: 'Specifications' },
+    { label: 'Total Cores',           v1: s1.totalCores,   v2: s2.totalCores,   up: true,  unit: '' },
+    { label: 'Threads',               v1: s1.threads,       v2: s2.threads,       up: true,  unit: '' },
+    { label: 'Base Clock (GHz)',       v1: s1.baseClockGHz,  v2: s2.baseClockGHz,  up: true,  unit: ' GHz' },
+    { label: 'Boost Clock (GHz)',      v1: s1.boostClockGHz, v2: s2.boostClockGHz, up: true,  unit: ' GHz' },
+    { label: 'L3 Cache (MB)',          v1: s1.l3CacheMB,     v2: s2.l3CacheMB,     up: true,  unit: ' MB' },
+    { label: 'TDP (W)',                v1: s1.tdpWatts,      v2: s2.tdpWatts,      up: false, unit: ' W' },
+    { label: 'Price (USD)',            v1: c1.price_usd,     v2: c2.price_usd,     up: false, unit: '', pre: '$' },
+    { label: 'Socket',                 v1: s1.socket,        v2: s2.socket,        up: null,  unit: '' },
+    { section: 'Cinebench R23' },
+    { label: 'Single-Core', v1: b1.cinebench_r23 && b1.cinebench_r23.singleCore, v2: b2.cinebench_r23 && b2.cinebench_r23.singleCore, up: true, unit: ' pts' },
+    { label: 'Multi-Core',  v1: b1.cinebench_r23 && b1.cinebench_r23.multiCore,  v2: b2.cinebench_r23 && b2.cinebench_r23.multiCore,  up: true, unit: ' pts' },
+    { section: 'Geekbench 6' },
+    { label: 'Single-Core', v1: b1.geekbench_6 && b1.geekbench_6.singleCore, v2: b2.geekbench_6 && b2.geekbench_6.singleCore, up: true, unit: ' pts' },
+    { label: 'Multi-Core',  v1: b1.geekbench_6 && b1.geekbench_6.multiCore,  v2: b2.geekbench_6 && b2.geekbench_6.multiCore,  up: true, unit: ' pts' },
+    { section: 'Other Benchmarks' },
+    { label: 'Blender (samples/min)', v1: b1.blender_monster && b1.blender_monster.score, v2: b2.blender_monster && b2.blender_monster.score, up: true, unit: '' },
+    { label: 'Passmark Score',        v1: b1.passmark && b1.passmark.score, v2: b2.passmark && b2.passmark.score, up: true, unit: '' }
+  ];
+
+  var html = '';
+  rows.forEach(function(row) {
+    if (row.section) {
+      html += '<tr class="section-divider"><td colspan="3">' + row.section + '</td></tr>';
+      return;
+    }
+    var v1 = (row.v1 !== undefined && row.v1 !== null) ? row.v1 : null;
+    var v2 = (row.v2 !== undefined && row.v2 !== null) ? row.v2 : null;
+    var cls1 = '', cls2 = '';
+    if (row.up !== null && v1 !== null && v2 !== null && typeof v1 === 'number') {
+      if (row.up)  { cls1 = v1 > v2 ? 'winner' : 'loser'; cls2 = v2 > v1 ? 'winner' : 'loser'; }
+      else         { cls1 = v1 < v2 ? 'winner' : 'loser'; cls2 = v2 < v1 ? 'winner' : 'loser'; }
+      if (v1 === v2) { cls1 = ''; cls2 = ''; }
+    }
+    function fmt(v, pre, unit) {
+      if (v === null || v === undefined) return '—';
+      if (typeof v === 'number') return (pre || '') + v.toLocaleString() + (unit || '');
+      return v;
+    }
+    html += '<tr><td>' + row.label + '</td><td class="' + cls1 + '">' + fmt(v1, row.pre, row.unit) + '</td><td class="' + cls2 + '">' + fmt(v2, row.pre, row.unit) + '</td></tr>';
+  });
+
+  document.getElementById('comparison-body').innerHTML = html;
+}
+
+document.getElementById('select-cpu1').addEventListener('change', function(e) {
+  var cpu = cpuData.find(function(c){ return c.id === e.target.value; });
+  renderCard('cpu1', cpu || null);
+  if (comparisonVisible) renderComparison();
+});
+
+document.getElementById('select-cpu2').addEventListener('change', function(e) {
+  var cpu = cpuData.find(function(c){ return c.id === e.target.value; });
+  renderCard('cpu2', cpu || null);
+  if (comparisonVisible) renderComparison();
+});
+
+document.getElementById('compare-btn').addEventListener('click', function() {
+  comparisonVisible = !comparisonVisible;
+  var section = document.getElementById('comparison-section');
+  var btn     = document.getElementById('compare-btn');
+  if (comparisonVisible) {
+    renderComparison();
+    section.classList.add('visible');
+    btn.classList.add('active');
+    btn.textContent = 'Hide Comparison';
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    section.classList.remove('visible');
+    btn.classList.remove('active');
+    btn.textContent = 'Compare';
+  }
+});
+
+var overlay = document.getElementById('modal-overlay');
+document.getElementById('fab-add').addEventListener('click',    function(){ overlay.classList.add('open'); });
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('btn-cancel').addEventListener('click',  closeModal);
+overlay.addEventListener('click', function(e){ if (e.target === overlay) closeModal(); });
+
+function closeModal() { overlay.classList.remove('open'); }
+
+document.getElementById('add-cpu-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var name   = document.getElementById('f-name').value.trim();
+  var brand  = document.getElementById('f-brand').value;
+  var cores  = parseInt(document.getElementById('f-cores').value) || 0;
+  var threads= parseInt(document.getElementById('f-threads').value) || 0;
+  var base   = parseFloat(document.getElementById('f-base').value) || 0;
+  var boost  = parseFloat(document.getElementById('f-boost').value) || 0;
+
+  if (!name || !brand || !cores || !threads || !base || !boost) {
+    showToast('Please fill in all required fields.', '#f59e0b'); return;
+  }
+
+  var newCPU = {
+    id: 'custom-' + Date.now(),
+    name: name, brand: brand,
+    family: document.getElementById('f-family').value || 'Custom',
+    releaseYear: parseInt(document.getElementById('f-year').value) || null,
+    price_usd:   parseFloat(document.getElementById('f-price').value) || null,
+    specifications: {
+      totalCores: cores, threads: threads,
+      baseClockGHz: base, boostClockGHz: boost,
+      tdpWatts:  parseInt(document.getElementById('f-tdp').value)   || null,
+      socket:    document.getElementById('f-socket').value          || null,
+      l3CacheMB: parseInt(document.getElementById('f-cache').value) || null,
+      lithography: document.getElementById('f-litho').value         || null
+    },
+    benchmarks: {
+      cinebench_r23: {
+        singleCore: parseInt(document.getElementById('f-cb23s').value) || 0,
+        multiCore:  parseInt(document.getElementById('f-cb23m').value) || 0
+      },
+      geekbench_6: {
+        singleCore: parseInt(document.getElementById('f-gb6s').value) || 0,
+        multiCore:  parseInt(document.getElementById('f-gb6m').value) || 0
+      }
+    }
+  };
+
+  var local = JSON.parse(localStorage.getItem('custom_cpus') || '[]');
+  local.push(newCPU);
+  localStorage.setItem('custom_cpus', JSON.stringify(local));
+  cpuData.push(newCPU);
+  populateSelects();
+  closeModal();
+  document.getElementById('add-cpu-form').reset();
+  showToast('CPU added to library!');
+});
+
+function showToast(msg, color) {
+  color = color || 'var(--accent-emerald)';
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = color;
+  t.style.color = color;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3200);
+}
+
+loadCPUs();
+</script>
+</body>
+</html>

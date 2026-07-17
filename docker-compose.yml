@@ -1,0 +1,40 @@
+version: "3.9"
+
+# Load all variables from .env automatically (docker compose reads .env by default)
+# DB_* vars are available as environment context and can be forwarded to
+# backend services added later without changing this file.
+
+services:
+
+  # ── Frontend (Nginx) ─────────────────────────────────────────────────────────
+  web:
+    image: nginx:1.25-alpine
+    container_name: cpu-showdown-web
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8082}:80"
+    volumes:
+      # Serve the entire project directory as the web root
+      - .:/usr/share/nginx/html:ro
+    environment:
+      # Expose infra context to the container (useful for future server-side work)
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "com.cpushowdown.service=frontend"
+      - "com.cpushowdown.version=1.0.0"
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  default:
+    name: cpu-showdown-net
+    driver: bridge

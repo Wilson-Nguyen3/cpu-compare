@@ -1,0 +1,245 @@
+{
+  "cpus": [
+    {
+      "id": "intel-core-i9-14900k",
+      "name": "Intel Core i9-14900K",
+      "brand": "Intel",
+      "family": "Raptor Lake Refresh",
+      "releaseYear": 2023,
+      "imageUrl": "",
+      "price_usd": 589,
+      "specifications": {
+        "totalCores": 24,
+        "performanceCores": 8,
+        "efficiencyCores": 16,
+        "threads": 32,
+        "baseClockGHz": 3.2,
+        "boostClockGHz": 6.0,
+        "l3CacheMB": 36,
+        "tdpWatts": 125,
+        "maxTurboTdpWatts": 253,
+        "socket": "LGA1700",
+        "memoryType": ["DDR4", "DDR5"],
+        "maxMemorySpeedMHz": 5600,
+        "integratedGraphics": "Intel UHD Graphics 770",
+        "lithography": "Intel 7 (10nm)",
+        "pcieLanes": 20,
+        "pcieVersion": "5.0"
+      },
+      "benchmarks": {
+        "cinebench_r23": {
+          "singleCore": 2253,
+          "multiCore": 38765,
+          "source": "Cinebench R23"
+        },
+        "geekbench_6": {
+          "singleCore": 3190,
+          "multiCore": 19850,
+          "source": "Geekbench 6"
+        },
+        "blender_monster": {
+          "score": 392.5,
+          "unit": "samples/min"
+        },
+        "passmark": {
+          "score": 63200
+        }
+      }
+    },
+    {
+      "id": "amd-ryzen-7-7800x3d",
+      "name": "AMD Ryzen 7 7800X3D",
+      "brand": "AMD",
+      "family": "Raphael (Zen 4 + 3D V-Cache)",
+      "releaseYear": 2023,
+      "imageUrl": "",
+      "price_usd": 449,
+      "specifications": {
+        "totalCores": 8,
+        "performanceCores": 8,
+        "efficiencyCores": 0,
+        "threads": 16,
+        "baseClockGHz": 4.2,
+        "boostClockGHz": 5.0,
+        "l3CacheMB": 96,
+        "tdpWatts": 120,
+        "maxTurboTdpWatts": 120,
+        "socket": "AM5",
+        "memoryType": ["DDR5"],
+        "maxMemorySpeedMHz": 5200,
+        "integratedGraphics": "AMD Radeon Graphics (RDNA 2)",
+        "lithography": "TSMC 5nm",
+        "pcieLanes": 24,
+        "pcieVersion": "5.0"
+      },
+      "benchmarks": {
+        "cinebench_r23": {
+          "singleCore": 1848,
+          "multiCore": 18285,
+          "source": "Cinebench R23"
+        },
+        "geekbench_6": {
+          "singleCore": 2740,
+          "multiCore": 13960,
+          "source": "Geekbench 6"
+        },
+        "blender_monster": {
+          "score": 183.7,
+          "unit": "samples/min"
+        },
+        "passmark": {
+          "score": 37950
+        }
+      }
+    },
+    {
+      "id": "apple-m3-max",
+      "name": "Apple M3 Max",
+      "brand": "Apple",
+      "family": "M3 (3nm)",
+      "releaseYear": 2023,
+      "imageUrl": "",
+      "price_usd": 1999,
+      "specifications": {
+        "totalCores": 16,
+        "performanceCores": 12,
+        "efficiencyCores": 4,
+        "threads": 16,
+        "baseClockGHz": 3.35,
+        "boostClockGHz": 4.05,
+        "l3CacheMB": 48,
+        "tdpWatts": 92,
+        "maxTurboTdpWatts": 92,
+        "socket": "BGA (Integrated SoC)",
+        "memoryType": ["LPDDR5X (Unified)"],
+        "maxMemorySpeedMHz": 6400,
+        "integratedGraphics": "Apple M3 Max GPU (40-core)",
+        "lithography": "TSMC 3nm",
+        "pcieLanes": 0,
+        "pcieVersion": "N/A (SoC)"
+      },
+      "benchmarks": {
+        "cinebench_r23": {
+          "singleCore": 1876,
+          "multiCore": 21320,
+          "source": "Cinebench R23"
+        },
+        "geekbench_6": {
+          "singleCore": 3750,
+          "multiCore": 21450,
+          "source": "Geekbench 6"
+        },
+        "blender_monster": {
+          "score": 244.1,
+          "unit": "samples/min"
+        },
+        "passmark": {
+          "score": 48600
+        }
+      }
+    },
+    {
+      "id": "amd-ryzen-9-7950x",
+      "name": "AMD Ryzen 9 7950X",
+      "brand": "AMD",
+      "family": "Raphael (Zen 4)",
+      "releaseYear": 2022,
+      "imageUrl": "",
+      "price_usd": 699,
+      "specifications": {
+        "totalCores": 16,
+        "performanceCores": 16,
+        "efficiencyCores": 0,
+        "threads": 32,
+        "baseClockGHz": 4.5,
+        "boostClockGHz": 5.7,
+        "l3CacheMB": 64,
+        "tdpWatts": 170,
+        "maxTurboTdpWatts": 230,
+        "socket": "AM5",
+        "memoryType": ["DDR5"],
+        "maxMemorySpeedMHz": 5200,
+        "integratedGraphics": "AMD Radeon Graphics (RDNA 2)",
+        "lithography": "TSMC 5nm",
+        "pcieLanes": 24,
+        "pcieVersion": "5.0"
+      },
+      "benchmarks": {
+        "cinebench_r23": {
+          "singleCore": 2063,
+          "multiCore": 38254,
+          "source": "Cinebench R23"
+        },
+        "geekbench_6": {
+          "singleCore": 3025,
+          "multiCore": 21800,
+          "source": "Geekbench 6"
+        },
+        "blender_monster": {
+          "score": 376.2,
+          "unit": "samples/min"
+        },
+        "passmark": {
+          "score": 59800
+        }
+      }
+    },
+    {
+      "id": "intel-core-ultra-9-285k",
+      "name": "Intel Core Ultra 9 285K",
+      "brand": "Intel",
+      "family": "Arrow Lake",
+      "releaseYear": 2024,
+      "imageUrl": "",
+      "price_usd": 589,
+      "specifications": {
+        "totalCores": 24,
+        "performanceCores": 8,
+        "efficiencyCores": 16,
+        "threads": 24,
+        "baseClockGHz": 3.7,
+        "boostClockGHz": 5.7,
+        "l3CacheMB": 36,
+        "tdpWatts": 125,
+        "maxTurboTdpWatts": 250,
+        "socket": "LGA1851",
+        "memoryType": ["DDR5"],
+        "maxMemorySpeedMHz": 6400,
+        "integratedGraphics": "Intel Graphics (Xe-LP)",
+        "lithography": "Intel 20A / TSMC N3B",
+        "pcieLanes": 24,
+        "pcieVersion": "5.0"
+      },
+      "benchmarks": {
+        "cinebench_r23": {
+          "singleCore": 2162,
+          "multiCore": 35140,
+          "source": "Cinebench R23"
+        },
+        "geekbench_6": {
+          "singleCore": 3380,
+          "multiCore": 18950,
+          "source": "Geekbench 6"
+        },
+        "blender_monster": {
+          "score": 345.8,
+          "unit": "samples/min"
+        },
+        "passmark": {
+          "score": 58100
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-10-01",
+    "benchmarkNotes": {
+      "cinebench_r23": "Scores reflect averages across multiple third-party reviews. Thermal conditions may affect results.",
+      "geekbench_6": "Scores sourced from Geekbench Browser aggregate data.",
+      "blender_monster": "Blender 4.x Monster benchmark scene, CPU render only.",
+      "passmark": "PerformanceTest 11 CPU Mark scores."
+    },
+    "disclaimer": "All benchmark scores are representative averages from public review data. Actual performance may vary based on cooling, platform, memory speed, and system configuration."
+  }
+}

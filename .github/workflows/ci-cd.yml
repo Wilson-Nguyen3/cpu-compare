@@ -1,0 +1,168 @@
+name: CI/CD — CPU Benchmark Showdown
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+  # Allow manual trigger from the Actions tab
+  workflow_dispatch:
+
+# Only one deployment runs at a time; cancel in-progress on new push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read        # read repo files
+  pages: write          # deploy to GitHub Pages
+  id-token: write       # OIDC token for Pages
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 1 · Validate
+  # Runs on every push and every PR to catch broken JSON or config errors early
+  # ──────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate Source Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate cpus.json (JSON syntax)
+        run: |
+          echo "🔍 Checking cpus.json for valid JSON..."
+          python3 -c "
+          import json, sys
+          with open('cpus.json') as f:
+              data = json.load(f)
+          cpus = data.get('cpus', [])
+          print(f'  ✅  cpus.json is valid JSON — {len(cpus)} CPU entries found.')
+
+          required_keys = ['id','name','brand','specifications','benchmarks']
+          for cpu in cpus:
+              missing = [k for k in required_keys if k not in cpu]
+              if missing:
+                  print(f'  ❌  {cpu.get(\"name\",\"unknown\")} is missing: {missing}')
+                  sys.exit(1)
+          print('  ✅  All CPU entries have required fields.')
+          "
+
+      - name: Validate docker-compose.yml (YAML syntax)
+        run: |
+          echo "🔍 Checking docker-compose.yml for valid YAML..."
+          python3 -c "
+          import yaml
+          with open('docker-compose.yml') as f:
+              data = yaml.safe_load(f)
+          print('  ✅  docker-compose.yml is valid YAML.')
+          print(f'     Services: {list(data.get(\"services\", {}).keys())}')
+          "
+
+      - name: Check index.html exists and is non-empty
+        run: |
+          echo "🔍 Checking index.html..."
+          [ -s index.html ] && echo "  ✅  index.html exists and is non-empty." || { echo "  ❌  index.html missing or empty!"; exit 1; }
+
+      - name: Check .env.example is committed (not .env)
+        run: |
+          echo "🔍 Checking that .env (secrets) is NOT tracked by git..."
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "  ❌  SECURITY: .env is tracked by git! Remove it with: git rm --cached .env"
+            exit 1
+          fi
+          echo "  ✅  .env is not tracked by git."
+          [ -f .env.example ] && echo "  ✅  .env.example is present for contributors." || echo "  ⚠   .env.example is missing — consider adding one."
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 2 · Docker Build (lint the image)
+  # Proves the Nginx image builds cleanly. Does NOT push to a registry.
+  # ──────────────────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env for docker compose (from example)
+        run: cp .env.example .env
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Smoke-test docker compose config
+        run: |
+          echo "🐳 Validating docker-compose.yml against Docker..."
+          docker compose config --quiet
+          echo "  ✅  docker compose config is valid."
+
+      - name: Pull Nginx image (cache layer)
+        run: docker pull nginx:1.25-alpine
+
+      - name: Start services and health-check
+        run: |
+          echo "🚀 Starting containers..."
+          docker compose up -d
+          echo "  ⏳ Waiting for Nginx to become healthy..."
+          sleep 6
+          STATUS=$(docker compose ps --format json | python3 -c "import sys,json; s=json.load(sys.stdin); print(s[0].get('Health','unknown'))" 2>/dev/null || echo "started")
+          echo "  Container status: $STATUS"
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082)
+          echo "  HTTP response: $HTTP"
+          [ "$HTTP" = "200" ] && echo "  ✅  Site is up on port 8082." || { echo "  ❌  Expected HTTP 200, got $HTTP"; docker compose logs; exit 1; }
+
+      - name: Tear down containers
+        if: always()
+        run: docker compose down
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 3 · Deploy to GitHub Pages
+  # Runs only on pushes to main/master (not on PRs)
+  # ──────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: [validate, docker-build]
+    # Only deploy on actual pushes to the default branch, not PRs
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare deployment artifact
+        run: |
+          echo "📦 Assembling deployment bundle..."
+          mkdir -p _site
+          # Copy all public assets — exclude secrets and git internals
+          cp index.html  _site/
+          cp cpus.json   _site/
+          echo "  ✅  Deployment bundle ready:"
+          ls -lh _site/
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Print live URL
+        run: |
+          echo ""
+          echo "🎉 Deployment complete!"
+          echo "   Live URL: ${{ steps.deployment.outputs.page_url }}"
+          echo ""
