@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ─── Database (PostgreSQL) ──────────────────────────────────────────────────
   db:
@@ -29,8 +27,8 @@ services:
       dockerfile: Dockerfile
     container_name: cpu-showdown-backend
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    # Exposing port 5000 to the host is removed to avoid conflicts.
+    # Nginx acts as the entry point and routes traffic to backend:5000 internally.
     environment:
       DB_HOST: db # Connect via docker internal DNS name
       DB_PORT: 5432
