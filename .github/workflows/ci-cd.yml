@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read        # read repo files
+  contents: write       # needed for configure-pages enablement: true
   pages: write          # deploy to GitHub Pages
   id-token: write       # OIDC token for Pages
 
@@ -150,6 +150,11 @@ jobs:
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          # Auto-enables Pages via GitHub Actions source if not already on.
+          # Requires the 'contents: write' or repo admin token — the default
+          # GITHUB_TOKEN with pages:write is sufficient for public repos.
+          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
