@@ -730,15 +730,14 @@ var BENCH_MAX = {
 
 async function loadCPUs() {
   try {
-    var res  = await fetch('./cpus.json');
+    var res  = await fetch('/api/cpus');
     var json = await res.json();
     cpuData  = json.cpus || [];
   } catch(e) {
+    console.error(e);
     cpuData = [];
-    showToast('Could not load cpus.json — starting with empty library.', '#f59e0b');
+    showToast('Could not load CPUs from database — starting with empty library.', '#f59e0b');
   }
-  var local = JSON.parse(localStorage.getItem('custom_cpus') || '[]');
-  cpuData = cpuData.concat(local);
   populateSelects();
   renderCard('cpu1', cpuData[0]);
   renderCard('cpu2', cpuData[1] || cpuData[0]);
@@ -915,7 +914,7 @@ overlay.addEventListener('click', function(e){ if (e.target === overlay) closeMo
 
 function closeModal() { overlay.classList.remove('open'); }
 
-document.getElementById('add-cpu-form').addEventListener('submit', function(e) {
+document.getElementById('add-cpu-form').addEventListener('submit', async function(e) {
   e.preventDefault();
   var name   = document.getElementById('f-name').value.trim();
   var brand  = document.getElementById('f-brand').value;
@@ -928,8 +927,12 @@ document.getElementById('add-cpu-form').addEventListener('submit', function(e) {
     showToast('Please fill in all required fields.', '#f59e0b'); return;
   }
 
+  // Create clean URL-friendly ID from name slug
+  var cleanId = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  if (!cleanId) cleanId = 'custom-' + Date.now();
+
   var newCPU = {
-    id: 'custom-' + Date.now(),
+    id: cleanId,
     name: name, brand: brand,
     family: document.getElementById('f-family').value || 'Custom',
     releaseYear: parseInt(document.getElementById('f-year').value) || null,
@@ -954,14 +957,32 @@ document.getElementById('add-cpu-form').addEventListener('submit', function(e) {
     }
   };
 
-  var local = JSON.parse(localStorage.getItem('custom_cpus') || '[]');
-  local.push(newCPU);
-  localStorage.setItem('custom_cpus', JSON.stringify(local));
-  cpuData.push(newCPU);
-  populateSelects();
-  closeModal();
-  document.getElementById('add-cpu-form').reset();
-  showToast('CPU added to library!');
+  try {
+    var res = await fetch('/api/cpus', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newCPU)
+    });
+    if (!res.ok) throw new Error('API server returned error ' + res.status);
+    
+    var dbCPU = await res.json();
+    
+    // Update local list with DB value
+    var existingIdx = cpuData.findIndex(function(c) { return c.id === dbCPU.id; });
+    if (existingIdx !== -1) {
+      cpuData[existingIdx] = dbCPU;
+    } else {
+      cpuData.push(dbCPU);
+    }
+    
+    populateSelects();
+    closeModal();
+    document.getElementById('add-cpu-form').reset();
+    showToast('CPU saved to database!');
+  } catch(err) {
+    console.error(err);
+    showToast('Failed to save CPU to database.', '#ef4444');
+  }
 });
 
 function showToast(msg, color) {

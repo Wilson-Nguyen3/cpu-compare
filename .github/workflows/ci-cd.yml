@@ -105,15 +105,23 @@ jobs:
 
       - name: Start services and health-check
         run: |
-          echo "🚀 Starting containers..."
-          docker compose up -d
-          echo "  ⏳ Waiting for Nginx to become healthy..."
-          sleep 6
-          STATUS=$(docker compose ps --format json | python3 -c "import sys,json; s=json.load(sys.stdin); print(s[0].get('Health','unknown'))" 2>/dev/null || echo "started")
-          echo "  Container status: $STATUS"
-          HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082)
-          echo "  HTTP response: $HTTP"
-          [ "$HTTP" = "200" ] && echo "  ✅  Site is up on port 8082." || { echo "  ❌  Expected HTTP 200, got $HTTP"; docker compose logs; exit 1; }
+          echo "🚀 Building and starting containers..."
+          docker compose up -d --build
+          echo "⏳ Waiting for services to be healthy (up to 60 seconds)..."
+          for i in {1..30}; do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082 || echo "000")
+            API_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082/api/health || echo "000")
+            echo "  Attempt $i: Frontend HTTP $HTTP, Backend HTTP $API_HEALTH"
+            if [ "$HTTP" = "200" ] && [ "$API_HEALTH" = "200" ]; then
+              echo "  ✅ All services (Frontend, API, and DB) are online and healthy!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "  ❌ Health checks failed to respond with HTTP 200"
+          docker compose ps
+          docker compose logs
+          exit 1
 
       - name: Tear down containers
         if: always()

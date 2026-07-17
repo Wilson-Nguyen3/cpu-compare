@@ -1,12 +1,48 @@
 version: "3.9"
 
-# Load all variables from .env automatically (docker compose reads .env by default)
-# DB_* vars are available as environment context and can be forwarded to
-# backend services added later without changing this file.
-
 services:
+  # ─── Database (PostgreSQL) ──────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: cpu-showdown-db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-cpu_scores}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Mount initialization script
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cpu_scores}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # ── Frontend (Nginx) ─────────────────────────────────────────────────────────
+  # ─── Backend API (Express) ──────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cpu-showdown-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db # Connect via docker internal DNS name
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-cpu_scores}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-1234}
+      PORT: 5000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ─── Frontend (Nginx Reverse Proxy) ─────────────────────────────────────────
   web:
     image: nginx:1.25-alpine
     container_name: cpu-showdown-web
@@ -14,27 +50,19 @@ services:
     ports:
       - "${NGINX_PORT:-8082}:80"
     volumes:
-      # Serve the entire project directory as the web root
+      # Serve current folder statically (Nginx handles routing)
       - .:/usr/share/nginx/html:ro
-    environment:
-      # Expose infra context to the container (useful for future server-side work)
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      # Override default Nginx server configuration with our custom reverse proxy
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    labels:
-      - "com.cpushowdown.service=frontend"
-      - "com.cpushowdown.version=1.0.0"
 
-# ── Networks ──────────────────────────────────────────────────────────────────
-networks:
-  default:
-    name: cpu-showdown-net
-    driver: bridge
+volumes:
+  pgdata:
+    name: cpu-showdown-db-data
