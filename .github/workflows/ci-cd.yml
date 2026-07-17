@@ -15,9 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read        # read repo files
-  pages: write          # deploy to GitHub Pages
-  id-token: write       # OIDC token for Pages
+  contents: write       # allows peaceiris/actions-gh-pages to push the gh-pages branch
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────────
@@ -120,8 +118,10 @@ jobs:
         run: docker compose down
 
   # ──────────────────────────────────────────────────────────────────────────
-  # JOB 3 · Deploy to GitHub Pages
-  # Runs only on pushes to main/master (not on PRs)
+  # JOB 3 · Deploy to GitHub Pages (gh-pages branch method)
+  # Pushes static files directly to the gh-pages branch via git.
+  # No Pages API call required — GitHub auto-serves any branch named
+  # gh-pages once you set Settings → Pages → Branch: gh-pages / root.
   # ──────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to GitHub Pages
@@ -130,41 +130,34 @@ jobs:
     # Only deploy on actual pushes to the default branch, not PRs
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare deployment artifact
+      - name: Prepare deployment bundle
         run: |
-          echo "📦 Assembling deployment bundle..."
+          echo "📦 Assembling site bundle..."
           mkdir -p _site
-          # Copy all public assets — exclude secrets and git internals
-          cp index.html  _site/
-          cp cpus.json   _site/
-          echo "  ✅  Deployment bundle ready:"
+          cp index.html _site/
+          cp cpus.json  _site/
+          echo "  ✅  Bundle contents:"
           ls -lh _site/
 
-      # configure-pages is intentionally omitted.
-      # deploy-pages@v4 bootstraps the Pages environment on first run
-      # without needing a prior GET /pages call, which caused the HttpError
-      # on repos that had never had Pages enabled before.
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: _site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          commit_message: "deploy: ${{ github.sha }}"
+          force_orphan: true    # keep gh-pages history clean (single commit)
 
       - name: Print live URL
         run: |
           echo ""
-          echo "🎉 Deployment complete!"
-          echo "   Live URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "🎉 Deployment pushed to gh-pages branch!"
+          echo "   Live URL: https://wilson-nguyen3.github.io/cpu-compare/"
+          echo ""
+          echo "   If the site is not yet live, go to:"
+          echo "   Settings → Pages → Branch → select 'gh-pages' → Save"
           echo ""
