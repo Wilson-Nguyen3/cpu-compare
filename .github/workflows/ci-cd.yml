@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write       # needed for peaceiris gh-pages push
+  contents: write       # required to checkout and read repo files
   pages: write          # deploy to GitHub Pages (GitHub Actions source mode)
   id-token: write       # OIDC token required by actions/deploy-pages
 
