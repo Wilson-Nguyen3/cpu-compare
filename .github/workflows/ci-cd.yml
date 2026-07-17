@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write       # needed for configure-pages enablement: true
+  contents: read        # read repo files
   pages: write          # deploy to GitHub Pages
   id-token: write       # OIDC token for Pages
 
@@ -148,13 +148,10 @@ jobs:
           echo "  ✅  Deployment bundle ready:"
           ls -lh _site/
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-        with:
-          # Auto-enables Pages via GitHub Actions source if not already on.
-          # Requires the 'contents: write' or repo admin token — the default
-          # GITHUB_TOKEN with pages:write is sufficient for public repos.
-          enablement: true
+      # configure-pages is intentionally omitted.
+      # deploy-pages@v4 bootstraps the Pages environment on first run
+      # without needing a prior GET /pages call, which caused the HttpError
+      # on repos that had never had Pages enabled before.
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
