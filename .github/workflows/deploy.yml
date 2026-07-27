@@ -2,7 +2,7 @@ name: Build & Deploy (Self-Hosted)
 
 on:
   push:
-    branches: [main]
+    branches: [master]
 
 # Only one deployment runs at a time; cancel in-progress on new push
 concurrency:
