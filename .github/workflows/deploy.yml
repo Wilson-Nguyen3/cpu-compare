@@ -1,0 +1,35 @@
+name: Build & Deploy (Self-Hosted)
+
+on:
+  push:
+    branches: [main]
+
+# Only one deployment runs at a time; cancel in-progress on new push
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build & Deploy Docker Container
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t my-running-app:latest .
+
+      - name: Stop and remove existing container (if any)
+        run: |
+          docker stop my-running-app || true
+          docker rm my-running-app   || true
+
+      - name: Run new container
+        run: |
+          docker run -d \
+            --name my-running-app \
+            -p 3030:3030 \
+            --restart unless-stopped \
+            my-running-app:latest
